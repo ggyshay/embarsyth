@@ -8,7 +8,7 @@ void printAllValues()
 {
   for (char i = 0; i < 8; ++i)
   {
-    Serial.printf("%d ", i);
+    Serial.printf("%d ", values[i]);
   }
   Serial.println();
 }
@@ -16,6 +16,10 @@ void printAllValues()
 void setup()
 {
   Serial.begin(112500);
+  while (!Serial)
+    ;
+  Serial.println("serial started");
+
   for (char i = 0; i < 8; ++i)
   {
     encoders[i] = new Encoder();
@@ -35,13 +39,19 @@ void setup()
       printAllValues();
     };
   }
+
+  Serial.println("callbacks allocated");
+
+  setupPorts();
+  Serial.println("ports setup");
 }
 
 void loop()
 {
-  for (char i = 0; i < 8; ++i)
+  for (char j = 0; j < 8; ++j)
   {
-    sendBits(0);
+    char i = j;
+    sendBits(i);
     delayMicroseconds(100);
     encoders[i]->setReading(digitalRead(E_A), digitalRead(E_B), digitalRead(E_C));
   }

@@ -27,6 +27,9 @@ namespace std
 
 void sendBits(byte i)
 {
+    // digitalWrite(4, 0);
+    // digitalWrite(5, 0);
+    // digitalWrite(6, 0);
     digitalWrite(S0, i & 0b001);
     digitalWrite(S1, i & 0b010);
     digitalWrite(S2, i & 0b100);
