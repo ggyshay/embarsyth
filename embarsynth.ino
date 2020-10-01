@@ -11,6 +11,7 @@ void printAllValues()
     Serial.printf("%d ", values[i]);
   }
   Serial.println();
+  Serial.println();
 }
 
 void setup()
