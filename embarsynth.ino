@@ -1,8 +1,11 @@
+#include <evilOLED.h>
+
 #include "BoardSupport.h"
 #include "Encoder.h"
 
 Encoder *encoders[8];
 int values[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+evilOLED disp(19, 18); // init display
 
 void printAllValues()
 {
@@ -19,6 +22,10 @@ void setup()
   while (!Serial)
     ;
   Serial.println("serial started");
+    //init display
+
+  
+  
 
   for (char i = 0; i < 8; ++i)
   {
@@ -48,13 +55,19 @@ void setup()
 
 void loop()
 {
-  for (char j = 0; j < 8; ++j)
-  {
-    char i = j;
-    sendBits(i);
-    delayMicroseconds(100);
-    encoders[i]->setReading(digitalRead(E_A), digitalRead(E_B), digitalRead(E_C));
-  }
+    disp.cls(0x00);
+   delay(500);
+  disp.setCursor(5, 2); // sets text cursor (x,y)
+  disp.putString("CHUPA NENEM"); // Strings MUST be double quoted and capitalized if using default font
+  delay(500);
+  
+//  for (char j = 0; j < 8; ++j)
+//  {
+//    char i = j;
+//    sendBits(i);
+//    delayMicroseconds(100);
+//    encoders[i]->setReading(digitalRead(E_A), digitalRead(E_B), digitalRead(E_C));
+//  }
 
   //atualiza encoder 0
 }
