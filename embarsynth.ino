@@ -34,16 +34,16 @@ void setup()
     encoders[i]->onIncrement = [i]() -> void {
       values[i]++;
       Serial.printf("e%d  increment: %d \n", i, values[i]);
-      printAllValues();
+      // printAllValues();
     };
     encoders[i]->onDecrement = [i]() -> void {
       values[i]--;
       Serial.printf("e%d  decrement: %d \n", i, values[i]);
-      printAllValues();
+      // printAllValues();
     };
     encoders[i]->onClick = [i]() -> void {
       Serial.printf("e%d  click: %d \n", i, values[i]);
-      printAllValues();
+      // printAllValues();
     };
   }
 
@@ -53,21 +53,33 @@ void setup()
   Serial.println("ports setup");
 }
 
+void printValue(int index, int value) {
+  disp.cls(0x00);
+  delay(500);
+  disp.setCursor(5, 2); 
+  disp.putString(index); // Strings MUST be double quoted and capitalized if using default font
+  delay(500);
+
+  disp.setCursor(5, 4);
+  disp.putString(index);
+  delay(500);
+}
+
 void loop()
 {
-    disp.cls(0x00);
-   delay(500);
-  disp.setCursor(5, 2); // sets text cursor (x,y)
-  disp.putString("CHUPA NENEM"); // Strings MUST be double quoted and capitalized if using default font
-  delay(500);
+    
   
-//  for (char j = 0; j < 8; ++j)
-//  {
-//    char i = j;
-//    sendBits(i);
-//    delayMicroseconds(100);
-//    encoders[i]->setReading(digitalRead(E_A), digitalRead(E_B), digitalRead(E_C));
-//  }
+ for (char j = 0; j < 8; ++j)
+ {
+   char i = j;
+   sendBits(i);
+   delayMicroseconds(100);
+   bool changed = encoders[i]->setReading(digitalRead(E_A), digitalRead(E_B), digitalRead(E_C));
+
+   if(changed) {
+     printValue(i, values[i])
+   }
+ }
 
   //atualiza encoder 0
 }
