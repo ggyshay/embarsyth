@@ -43,4 +43,6 @@ void setupPorts()
     pinMode(E_A, INPUT);
     pinMode(E_B, INPUT);
     pinMode(E_C, INPUT);
+    pinMode(19, OUTPUT);
+    pinMode(18, OUTPUT);
 }
