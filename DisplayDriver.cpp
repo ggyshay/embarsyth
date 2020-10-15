@@ -15,8 +15,6 @@ void DisplayDriver::sendCmd(unsigned char cmd)
 
 void DisplayDriver::init()
 {
-    // pinMode(37, OUTPUT); // set SDA + SCL pins as output
-    // pinMode(38, OUTPUT);
     Wire.begin(I2C_MASTER, 0x00, I2C_PINS_18_19, I2C_PULLUP_EXT, 400000);
     Wire.setOpMode(I2C_OP_MODE_DMA);
     delay(100);

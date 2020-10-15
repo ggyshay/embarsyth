@@ -23,7 +23,7 @@ void setup()
     ;
   Serial.println("serial started");
 
-    for (char i = 0; i < 8; ++i)
+  for (char i = 0; i < 8; ++i)
   {
     encoders[i] = new Encoder();
 
@@ -55,6 +55,19 @@ void setup()
   disp->init();
   disp->putScreen("0X303", "BEGIN");
   Serial.println("display initialized");
+}
+
+void printValue(int index, int value)
+{
+  disp.cls(0x00);
+  delay(500);
+  disp.setCursor(5, 2);
+  disp.putString(index); // Strings MUST be double quoted and capitalized if using default font
+  delay(500);
+
+  disp.setCursor(5, 4);
+  disp.putString(index);
+  delay(500);
 }
 
 void loop()
