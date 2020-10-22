@@ -2,12 +2,14 @@
 #include "Encoder.h"
 #include "DisplayDriver.h"
 #include "AudioInfra.h"
+#include "ValueInterface.h"
 
 Encoder *encoders[8];
 DisplayDriver *disp;
 AudioInfra audioInfra;
 int values[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 const char *encoder_names[8] = {"ENC1", "ENC2", "ENC3", "ENC4", "ENC5", "ENC6", "ENC7", "ENC8"};
+Value *globalVolume = new Value(0.0, 1.0, 0.8, "VOLUME", 40, false);
 
 void printAllValues()
 {
@@ -25,7 +27,7 @@ void setup()
     ;
   Serial.println("serial started");
 
-  for (char i = 0; i < 8; ++i)
+  for (char i = 0; i < 7; ++i)
   {
     encoders[i] = new Encoder();
 
@@ -47,6 +49,19 @@ void setup()
       printAllValues();
     };
   }
+  encoders[7] = new Encoder();
+  encoders[7]->onIncrement = []() -> void {
+    globalVolume->increment();
+    Serial.printf("e%d  increment: %d \n", 7, values[7]);
+    disp->putScreen(globalVolume->nameTag, globalVolume->value);
+    audioInfra.setVolume(globalVolume->value);
+  };
+  encoders[7]->onDecrement = []() -> void {
+    globalVolume->decrement();
+    Serial.printf("e%d  decrement: %d \n", 7, values[7]);
+    disp->putScreen(globalVolume->nameTag, globalVolume->value);
+    audioInfra.setVolume(globalVolume->value);
+  };
 
   usbMIDI.setHandleNoteOn(handleNoteOn);
   // usbMIDI.setHandleNoteOff(handleNoteOff);
@@ -65,19 +80,6 @@ void setup()
   Serial.println("display initialized");
 }
 
-// void printValue(int index, int value)
-// {
-//   disp.cls(0x00);
-//   delay(500);
-//   disp.setCursor(5, 2);
-//   disp.putString(index); // Strings MUST be double quoted and capitalized if using default font
-//   delay(500);
-
-//   disp.setCursor(5, 4);
-//   disp.putString(index);
-//   delay(500);
-// }
-
 void loop()
 {
   usbMIDI.read();
@@ -88,12 +90,10 @@ void loop()
     delayMicroseconds(100);
     encoders[i]->setReading(digitalRead(E_A), digitalRead(E_B), digitalRead(E_C));
   }
-
-  //atualiza encoder 0
 }
 
 void handleNoteOn(byte channel, byte note, byte velocity)
 {
-  Serial.printf("note on %d %d %d\n", channel, note, velocity);
+  // Serial.printf("note on %d %d %d\n", channel, note, velocity);
   audioInfra.handleNoteOn(channel, note, velocity);
 }
