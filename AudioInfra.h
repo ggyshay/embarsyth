@@ -1,11 +1,14 @@
 #include <Audio.h>
+#include "ValueInterface.h"
+#include <vector>
 
 class AudioInfra
 {
 public:
     void begin()
     {
-        AudioMemory(40); // 10 * 256 * 2 bytes
+        createParamLists();
+        AudioMemory(10); // 10 * 256 * 2 bytes
         sgtl5000_1.enable();
         sgtl5000_1.volume(0.6);
 
@@ -23,9 +26,35 @@ public:
         waveform1.frequency(frequency);
     }
 
-    void setVolume(float vol)
+    void updateGlobalList()
     {
-        outputGain.gain(vol);
+
+        outputGain.gain(paramLists[7][0].value);
+    }
+
+    Value *getCurrentValue(char i)
+    {
+        //find current value in i-th list and return its pointer
+        return &paramLists[i][paramListsPointers[i]];
+    }
+
+    Value *getNextValue(char i)
+    {
+        // increment list value pointer and return it
+        paramListsPointers[i] = (paramListsPointers[i] + 1) % paramLists[i].size();
+        return &paramLists[i][paramListsPointers[i]];
+    }
+
+    void updateIList(char i)
+    {
+        switch (i)
+        {
+        case 7:
+            updateGlobalList();
+            break;
+        default:
+            break;
+        }
     }
 
 private:
@@ -37,4 +66,23 @@ private:
     AudioConnection *patchCord1;
     AudioConnection *patchCord2;
     AudioConnection *patchCord3;
+
+    std::vector<Value> paramLists[8];
+    char paramListsPointers[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+    void createParamLists()
+    {
+
+        //WAVEFORM1 -----------------------------------------------------
+
+        //WAVEFORM2 -----------------------------------------------------
+        //FILTER --------------------------------------------------------
+        //FILTER ENVELOPE -----------------------------------------------
+        //AMP ENVELOPE --------------------------------------------------
+        //FX ------------------------------------------------------------
+        //LFO -----------------------------------------------------------
+        //GLOBAL --------------------------------------------------------
+        Value globalVolume(0, 1.0, 0.3, "VOLUME", 100);
+        paramLists[7].push_back(globalVolume);
+    }
 };
