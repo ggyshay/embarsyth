@@ -1,9 +1,11 @@
 #include "BoardSupport.h"
 #include "Encoder.h"
 #include "DisplayDriver.h"
+#include "AudioInfra.h"
 
 Encoder *encoders[8];
 DisplayDriver *disp;
+AudioInfra audioInfra;
 int values[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 const char *encoder_names[8] = {"ENC1", "ENC2", "ENC3", "ENC4", "ENC5", "ENC6", "ENC7", "ENC8"};
 
@@ -46,10 +48,16 @@ void setup()
     };
   }
 
+  usbMIDI.setHandleNoteOn(handleNoteOn);
+  // usbMIDI.setHandleNoteOff(handleNoteOff);
+
   Serial.println("callbacks allocated");
 
   setupPorts();
   Serial.println("ports setup");
+
+  audioInfra.begin();
+  Serial.println("audioInfra initialized");
 
   //init display
   disp->init();
@@ -57,22 +65,22 @@ void setup()
   Serial.println("display initialized");
 }
 
-void printValue(int index, int value)
-{
-  disp.cls(0x00);
-  delay(500);
-  disp.setCursor(5, 2);
-  disp.putString(index); // Strings MUST be double quoted and capitalized if using default font
-  delay(500);
+// void printValue(int index, int value)
+// {
+//   disp.cls(0x00);
+//   delay(500);
+//   disp.setCursor(5, 2);
+//   disp.putString(index); // Strings MUST be double quoted and capitalized if using default font
+//   delay(500);
 
-  disp.setCursor(5, 4);
-  disp.putString(index);
-  delay(500);
-}
+//   disp.setCursor(5, 4);
+//   disp.putString(index);
+//   delay(500);
+// }
 
 void loop()
 {
-
+  usbMIDI.read();
   for (char j = 0; j < 8; ++j)
   {
     char i = j;
@@ -82,4 +90,10 @@ void loop()
   }
 
   //atualiza encoder 0
+}
+
+void handleNoteOn(byte channel, byte note, byte velocity)
+{
+  Serial.printf("note on %d %d %d\n", channel, note, velocity);
+  audioInfra.handleNoteOn(channel, note, velocity);
 }
