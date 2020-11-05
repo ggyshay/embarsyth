@@ -18,6 +18,8 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "vector": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "cstddef": "cpp",
+        "complex": "cpp"
     }
 }

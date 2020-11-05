@@ -99,7 +99,7 @@ void setup()
 
   //SETUP MIDI CALLBACKS
   usbMIDI.setHandleNoteOn(handleNoteOn);
-  // usbMIDI.setHandleNoteOff(handleNoteOff);
+  usbMIDI.setHandleNoteOff(handleNoteOff);
 
   Serial.println("callbacks allocated");
 
@@ -134,4 +134,9 @@ void handleNoteOn(byte channel, byte note, byte velocity)
 {
   // Serial.printf("note on %d %d %d\n", channel, note, velocity);
   audioInfra.handleNoteOn(channel, note, velocity);
+}
+
+void handleNoteOff(byte channel, byte note, byte velocity){
+  // Serial.printf("note off %d %d %d\n", channel, note, velocity);
+  audioInfra.handleNoteOff();
 }
