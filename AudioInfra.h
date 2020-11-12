@@ -26,6 +26,17 @@ struct OscillatorState_t
     }
 };
 
+void setupWaveShaper(float *curve, int buffer_length, float amount)
+{
+    float deg = PI / 180.0f;
+    float x;
+    for (int i = 0; i < buffer_length; ++i)
+    {
+        x = (float)i * 2.0f / buffer_length - 1.0f;
+        curve[i] = (3.0 + amount) * x * 20.0 * deg / (PI + amount * abs(x));
+    }
+}
+
 class AudioInfra
 {
 public:
@@ -36,26 +47,27 @@ public:
         sgtl5000_1.enable();
         sgtl5000_1.volume(0.6);
 
-        patchCord1 = new AudioConnection(waveform1, 0, mixer1, 0);
-        patchCord2 = new AudioConnection(waveform2, 0, mixer1, 1);
+        patchCord1 = new AudioConnection(waveform1, 0, mixer1, 0); // oscilador 1 para o mixer
+        patchCord2 = new AudioConnection(waveform2, 0, mixer1, 1); // oscilador 2 para o mixer
 
-        patchCord3 = new AudioConnection(fltEnv, 0, filterModulation, 0);
-        patchCord4 = new AudioConnection(filterModulation, 0, filter1, 1);
-        patchCord5 = new AudioConnection(mixer1, 0, filter1, 0);
+        patchCord3 = new AudioConnection(fltEnv, 0, filterModulation, 0);  // envelope do filtro oara o controle de modulação
+        patchCord4 = new AudioConnection(filterModulation, 0, filter1, 1); // controle de modulação controlando o cutoff do filtro
+        patchCord5 = new AudioConnection(mixer1, 0, filter1, 0);           // sinal entrando no filtro
 
-        patchCord6 = new AudioConnection(filter1, 0, filterSelector, 0);
-        patchCord7 = new AudioConnection(filter1, 1, filterSelector, 1);
-        patchCord8 = new AudioConnection(filter1, 2, filterSelector, 2);
+        patchCord6 = new AudioConnection(filter1, 0, filterSelector, 0); // passa baixas
+        patchCord7 = new AudioConnection(filter1, 1, filterSelector, 1); // passa banda
+        patchCord8 = new AudioConnection(filter1, 2, filterSelector, 2); // passa altas
 
+        patchCord9 = new AudioConnection(filterSelector, 0, ampMultiply, 0); // sinal entrando na multiplicação
+        patchCord10 = new AudioConnection(ampEnv, 0, ampMultiply, 1);        // envelope de amplitude entrando na multiplicação
 
-        patchCord9 = new AudioConnection(filterSelector, 0, ampMultiply, 0);
-        patchCord10 = new AudioConnection(ampEnv, 0, ampMultiply, 1);
+        patchCord11 = new AudioConnection(ampMultiply, distortion);
 
-        patchCord11 = new AudioConnection(ampMultiply, 0, outputGain, 0);
-        patchCord12 = new AudioConnection(outputGain, 0, i2s1, 0);
-        patchCord13 = new AudioConnection(outputGain, 0, i2s1, 1);
-        patchCord14 = new AudioConnection(outputGain, 0, usbOut, 0);
-        patchCord15 = new AudioConnection(outputGain, 0, usbOut, 1);
+        patchCord12 = new AudioConnection(distortion, 0, outputGain, 0); // gain stage
+        patchCord13 = new AudioConnection(outputGain, 0, i2s1, 0);       // indo para o DAC
+        patchCord14 = new AudioConnection(outputGain, 0, i2s1, 1);
+        patchCord15 = new AudioConnection(outputGain, 0, usbOut, 0); // audio na USB
+        patchCord16 = new AudioConnection(outputGain, 0, usbOut, 1);
 
         waveform1.begin(1.0, 440, WAVEFORM_SAWTOOTH);
         waveform2.begin(0.0, 440, WAVEFORM_SAWTOOTH);
@@ -63,7 +75,7 @@ public:
         filter1.resonance(1.6);
         filter1.octaveControl(3);
         outputGain.gain(0.8);
-        for(byte i = 0; i < 8; i++)
+        for (byte i = 0; i < 8; i++) // configurando todos os parametros de acordo com a param list
             updateIList(i);
     }
 
@@ -89,7 +101,8 @@ public:
         fltEnv.noteOn();
     }
 
-    void handleNoteOff() {
+    void handleNoteOff()
+    {
         ampEnv.noteOff();
         fltEnv.noteOff();
     }
@@ -168,7 +181,7 @@ public:
     }
 
     //encoder 3
-        void updateFilterEvelopeList()
+    void updateFilterEvelopeList()
     {
         fltEnv.setCoefficients(paramLists[3][1].value, 0.001, paramLists[3][0].value, paramLists[3][2].value, paramLists[3][3].value);
     }
@@ -178,8 +191,12 @@ public:
     {
         ampEnv.setCoefficients(paramLists[4][1].value, 0.001, paramLists[4][0].value, paramLists[4][2].value, paramLists[4][3].value);
     }
- 
 
+    void updateEffectsList()
+    {
+        setupWaveShaper(distCurve, 129, paramLists[5][0].value);
+        distortion.shape(distCurve, 129);
+    }
     //encoder 7
     void updateGlobalList()
     {
@@ -204,22 +221,25 @@ public:
     {
         switch (i)
         {
-        case 0:
+        case 0: // bloco do oscilador 1
             updateWaveform1List();
             break;
-        case 1:
+        case 1: // bloco do oscilador 2
             updateWaveform2List();
             break;
-        case 2:
+        case 2: // bloco do filtro
             updateFilterList();
             break;
-        case 3:
+        case 3: // bloco do envelope do filtro
             updateFilterEvelopeList();
             break;
-        case 4:
+        case 4: // bloco do envelope da amplitude
             updateAmpEvelopeList();
             break;
-        case 7:
+        case 5:
+            updateEffectsList();
+            break;
+        case 7: // bloco do volume total
             updateGlobalList();
             break;
         default:
@@ -232,6 +252,7 @@ private:
     OscillatorState_t wf1State;
     OscillatorState_t wf2State;
     int lastNote = 69;
+    float distCurve[129];
 
     //audio blocks
     AudioControlSGTL5000 sgtl5000_1;
@@ -245,6 +266,7 @@ private:
     AudioFilterStateVariable filter1;
     AudioAmplifier outputGain;
     AudioEffectMultiply ampMultiply;
+    AudioEffectWaveshaper distortion;
     AudioOutputI2S i2s1;
     AudioOutputUSB usbOut;
 
@@ -264,6 +286,7 @@ private:
     AudioConnection *patchCord13;
     AudioConnection *patchCord14;
     AudioConnection *patchCord15;
+    AudioConnection *patchCord16;
 
     //infra objects
     std::vector<Value> paramLists[8];
@@ -333,14 +356,19 @@ private:
 
         Value ampEnvReleaseValue(1.0, 3000.0, 100.0, "RELEASE", 70, true);
         paramLists[4].push_back(ampEnvReleaseValue);
+
         //FX ------------------------------------------------------------
+        Value fxDist(0, 100.0, 0.0, "DISTORTION", 100);
+        paramLists[5].push_back(fxDist);
+
         //LFO -----------------------------------------------------------
         //GLOBAL --------------------------------------------------------
         Value globalVolume(0, 1.0, 0.3, "VOLUME", 100);
         paramLists[7].push_back(globalVolume);
     }
 
-    void noteOff() {
+    void noteOff()
+    {
         ampEnv.noteOff();
         fltEnv.noteOff();
     }

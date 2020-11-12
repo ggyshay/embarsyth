@@ -56,21 +56,10 @@ public:
         threshold = floatToFixed(yf);
         sustain = _sustain;
 
-        // state = 0;
-        // lastY = 0;
+        state = 0;
+        lastY = 0;
 
         attackSlope = (uint32_t)floatToFixed(1000.0 / (_attack * AUDIO_SAMPLE_RATE));
-
-        //     double midPoint = 0.3;
-        // double m = (yf - midPoint) / (midPoint - 1);
-        // double alpha = 2000.0 / _length * log(m);
-        // double c = 1 - (midPoint - 1) / (m - 1);
-        // double h = 1.0 / AUDIO_SAMPLE_RATE;
-
-        // multTerm = floatToFixed((1.0 + h * alpha));
-        // constTerm = floatToFixed((-h * alpha * c));
-
-        // state = true;
     }
 
     int32_t nextY()
