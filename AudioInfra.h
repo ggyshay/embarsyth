@@ -42,11 +42,16 @@ class AudioInfra
 public:
     void begin()
     {
+        // Creates parameters to be controlled by encoders
         createParamLists();
+
+        // Setup configs
         AudioMemory(130);
         sgtl5000_1.enable();
         sgtl5000_1.volume(0.6);
 
+        // Setup Audio Connections - the actual sound blocks and transformers
+        // This is based on the Teensy Library
         patchCord1 = new AudioConnection(waveform1, 0, mixer1, 0); // oscilador 1 para o mixer
         patchCord2 = new AudioConnection(waveform2, 0, mixer1, 1); // oscilador 2 para o mixer
 
@@ -69,40 +74,54 @@ public:
         patchCord15 = new AudioConnection(outputGain, 0, usbOut, 0); // audio na USB
         patchCord16 = new AudioConnection(outputGain, 0, usbOut, 1);
 
+        // Setup starting parameters
         waveform1.begin(1.0, 440, WAVEFORM_SAWTOOTH);
         waveform2.begin(0.0, 440, WAVEFORM_SAWTOOTH);
         filter1.frequency(500);
         filter1.resonance(1.6);
         filter1.octaveControl(3);
         outputGain.gain(0.8);
-        for (byte i = 0; i < 8; i++) // configurando todos os parametros de acordo com a param list
+        
+        // Config all parameters based on parameters list
+        for (byte i = 0; i < 8; i++) 
             updateIList(i);
     }
 
     void changeWaveform1Frequency(byte note, float semitones, float detune)
     {
+        // Sets note in state
         wf1State.setNote(note);
+
+        // Calculate frequency based on note, semitones and detune
         float frequency = pow(2.0, (note - 69.0) / 12.0) * 440.0 * pow(NOTE_INTERVAL, semitones + detune);
+
+        // Sets frequency waveform
         waveform1.frequency(frequency);
     }
 
-    void changeWaveform2Frequency(byte note, float semitones, float detune) // pelo amor de deus faz ser uma função só essa e a de cima
+    void changeWaveform2Frequency(byte note, float semitones, float detune)
     {
         wf2State.setNote(note);
         float frequency = pow(2.0, (note - 69.0) / 12.0) * 440.0 * pow(NOTE_INTERVAL, semitones + detune);
         waveform2.frequency(frequency);
     }
 
+    // Callback called when note is pressed
     void handleNoteOn(byte channel, byte note, byte velocity)
     {
+        // Set frequencies
         changeWaveform1Frequency(note, wf1State.semitone, wf1State.detune);
         changeWaveform2Frequency(note, wf2State.semitone, wf2State.detune);
+
+        // Turn on envelopr
         ampEnv.noteOn();
         fltEnv.noteOn();
     }
 
+    // Callback called when note is released
     void handleNoteOff()
     {
+        // Turn off envelopes
         ampEnv.noteOff();
         fltEnv.noteOff();
     }
@@ -110,11 +129,15 @@ public:
     //encoder 0
     void updateWaveform1List()
     {
+        // Gets relevant data from correct values in paramList
         float semitones = paramLists[0][0].value;
         float detune = paramLists[0][1].value;
         char wf = (char)paramLists[0][2].value;
-        // Serial.printf("note: %d, semitones: %f, detune: %f, wf: %f\n", note, semitones, detune, wf);
+
+        // Updates waveform state
         wf1State.setState(lastNote, semitones, detune, wf, 1);
+
+        // Updates waveform format
         switch (wf)
         {
         case 0:
@@ -126,13 +149,12 @@ public:
         case 2:
             waveform1.begin(WAVEFORM_SQUARE);
             break;
-        // case 3:
-        //     waveform1.begin(SPECIAL_WF);
-        //     break;
+
         default:
             break;
         }
-        // lastNote = note == 0 ? lastNote : note;
+
+        // Updates waveform frequency based on new semitones and detune
         changeWaveform1Frequency(lastNote, semitones, detune);
     }
 
@@ -156,8 +178,7 @@ public:
         case 2:
             waveform2.begin(WAVEFORM_SQUARE);
             break;
-        // case 3:
-        //     waveform2.begin(SPECIAL_WF);
+
         default:
             break;
         }
@@ -219,6 +240,8 @@ public:
 
     void updateIList(char i)
     {
+        // Maps each encoder to each update function
+
         switch (i)
         {
         case 0: // bloco do oscilador 1

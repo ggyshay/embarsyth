@@ -109,14 +109,17 @@ public:
 
     void noteOn()
     {
+        // Sets starting multiplier to 0
         lastY = floatToFixed(0);
-        state = SATTACK; // attack
+
+        // Sets state to attack
+        state = SATTACK;
     }
 
     void noteOff()
     {
-        // lastY = sustain;
-        state = SRELEASE; // release
+        // Sets state to release
+        state = SRELEASE;
     }
 
 private:
