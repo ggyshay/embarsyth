@@ -28,57 +28,31 @@ void setup()
     ;
   Serial.println("serial started");
 
-  // for (char i = 0; i < 7; ++i)
-  // {
-  //   encoders[i] = new Encoder();
-
-  //   encoders[i]->onIncrement = [i]() -> void {
-  //     values[i]++;
-  //     Serial.printf("e%d  increment: %d \n", i, values[i]);
-  //     disp->putScreen(encoder_names[i], (float)values[i]);
-  //     printAllValues();
-  //   };
-  //   encoders[i]->onDecrement = [i]() -> void {
-  //     values[i]--;
-  //     Serial.printf("e%d  decrement: %d \n", i, values[i]);
-  //     disp->putScreen(encoder_names[i], (float)values[i]);
-  //     printAllValues();
-  //   };
-  //   encoders[i]->onClick = [i]() -> void {
-  //     Serial.printf("e%d  click: %d \n", i, values[i]);
-  //     disp->putScreen(encoder_names[i], (float)values[i]);
-  //     printAllValues();
-  //   };
-  // }
-
-  // encoders[7] = new Encoder();
-  // encoders[7]->onIncrement = []() -> void {
-  //   globalVolume->increment();
-  //   Serial.printf("e%d  increment: %d \n", 7, values[7]);
-  //   disp->putScreen(globalVolume->nameTag, globalVolume->value);
-  //   audioInfra.setVolume(globalVolume->value);
-  // };
-  // encoders[7]->onDecrement = []() -> void {
-  //   globalVolume->decrement();
-  //   Serial.printf("e%d  decrement: %d \n", 7, values[7]);
-  //   disp->putScreen(globalVolume->nameTag, globalVolume->value);
-  //   audioInfra.setVolume(globalVolume->value);
-  // };
-
   //SETUP ENCODERS
   for (char i = 0; i < 8; ++i)
   {
     encoders[i] = new Encoder();
 
+    // Setup increment
     encoders[i]->onIncrement = [i]() -> void {
+      // Gets respective value in AudioInfra
       Value *v = audioInfra.getCurrentValue(i);
+
       if (v == nullptr)
         return;
+
+      // increments value
       v->increment();
+
+      // Display and serial info print
       Serial.printf("e%d  increment: %f \n", i, v->value);
       disp->putScreen(v->nameTag, v->value);
+
+      // Actually updates sound
       audioInfra.updateIList(i);
     };
+
+    // Setup decrement
     encoders[i]->onDecrement = [i]() -> void {
       Value *v = audioInfra.getCurrentValue(i);
       if (v == nullptr)
@@ -88,10 +62,15 @@ void setup()
       disp->putScreen(v->nameTag, v->value);
       audioInfra.updateIList(i);
     };
+
+    // Setup click
     encoders[i]->onClick = [i]() -> void {
+      // Get and updates selected value for i in AudioInfra
       Value *v = audioInfra.getNextValue(i);
+
       if (v == nullptr)
         return;
+
       Serial.printf("e%d  click: %f \n", i, v->value);
       disp->putScreen(v->nameTag, v->value);
     };
@@ -120,23 +99,27 @@ void setup()
 
 void loop()
 {
+  // Reads MIDI info from PC
   usbMIDI.read();
+
+  // Iterates encoders
   for (char j = 0; j < 8; ++j)
   {
     char i = j;
-    sendBits(i);
+    sendBits(i); // Toggle encoder
     delayMicroseconds(100);
+
+    // Update encoder reading, which calls callbacks
     encoders[i]->setReading(digitalRead(E_A), digitalRead(E_B), digitalRead(E_C));
   }
 }
 
+// Callbacks called when note is pressed or released
 void handleNoteOn(byte channel, byte note, byte velocity)
 {
-  // Serial.printf("note on %d %d %d\n", channel, note, velocity);
   audioInfra.handleNoteOn(channel, note, velocity);
 }
 
 void handleNoteOff(byte channel, byte note, byte velocity){
-  // Serial.printf("note off %d %d %d\n", channel, note, velocity);
   audioInfra.handleNoteOff();
 }
