@@ -62,12 +62,19 @@ public:
         patchCord10 = new AudioConnection(ampEnv, 0, ampMultiply, 1);        // envelope de amplitude entrando na multiplicação
 
         patchCord11 = new AudioConnection(ampMultiply, distortion);
+        
+        patchCord12 = new AudioConnection(distortion, 0, delayDryWetMixer, 0);
 
-        patchCord12 = new AudioConnection(distortion, 0, outputGain, 0); // gain stage
-        patchCord13 = new AudioConnection(outputGain, 0, i2s1, 0);       // indo para o DAC
-        patchCord14 = new AudioConnection(outputGain, 0, i2s1, 1);
-        patchCord15 = new AudioConnection(outputGain, 0, usbOut, 0); // audio na USB
-        patchCord16 = new AudioConnection(outputGain, 0, usbOut, 1);
+        patchCord12 = new AudioConnection(distortion, 0, delayMixer, 0);
+        patchCord13 = new AudioConnection(delayMixer, delayFx);
+        patchCord14 = new AudioConnection(delayFx, 0, delayMixer, 1);
+        patchCord15 = new AudioConnection(delayFx, 0, delayDryWetMixer, 1);
+
+        patchCord16 = new AudioConnection(delayDryWetMixer, 0, outputGain, 0);
+        patchCord17 = new AudioConnection(outputGain, 0, i2s1, 0);       // indo para o DAC
+        patchCord18 = new AudioConnection(outputGain, 0, i2s1, 1);
+        patchCord19 = new AudioConnection(outputGain, 0, usbOut, 0); // audio na USB
+        patchCord20 = new AudioConnection(outputGain, 0, usbOut, 1);
 
         waveform1.begin(1.0, 440, WAVEFORM_SAWTOOTH);
         waveform2.begin(0.0, 440, WAVEFORM_SAWTOOTH);
@@ -75,6 +82,8 @@ public:
         filter1.resonance(1.6);
         filter1.octaveControl(3);
         outputGain.gain(0.8);
+        delayFx.delay(0, 200);
+        delayMixer.gain(1, 0.7);
         for (byte i = 0; i < 8; i++) // configurando todos os parametros de acordo com a param list
             updateIList(i);
     }
@@ -192,10 +201,20 @@ public:
         ampEnv.setCoefficients(paramLists[4][1].value, 0.001, paramLists[4][0].value, paramLists[4][2].value, paramLists[4][3].value);
     }
 
+    void setDelayDryWet(float amount)
+    {
+        delayDryWetMixer.gain(0, 1 - amount);
+        delayDryWetMixer.gain(1, amount);
+    }
+
     void updateEffectsList()
     {
         setupWaveShaper(distCurve, 129, paramLists[5][0].value);
         distortion.shape(distCurve, 129);
+
+        delayFx.delay(0, (int)paramLists[5][1].value); // tempo de delay (tamanho do buffer de delay)
+        setDelayDryWet(paramLists[5][2].value); // dry wet
+        delayMixer.gain(1, paramLists[5][3].value); // multiplicador do sinal de feedback
     }
     //encoder 7
     void updateGlobalList()
@@ -267,6 +286,9 @@ private:
     AudioAmplifier outputGain;
     AudioEffectMultiply ampMultiply;
     AudioEffectWaveshaper distortion;
+    AudioMixer4 delayDryWetMixer;
+    AudioMixer4 delayMixer;
+    AudioEffectDelay delayFx;
     AudioOutputI2S i2s1;
     AudioOutputUSB usbOut;
 
@@ -287,6 +309,10 @@ private:
     AudioConnection *patchCord14;
     AudioConnection *patchCord15;
     AudioConnection *patchCord16;
+    AudioConnection *patchCord17;
+    AudioConnection *patchCord18;
+    AudioConnection *patchCord19;
+    AudioConnection *patchCord20;
 
     //infra objects
     std::vector<Value> paramLists[8];
@@ -360,6 +386,15 @@ private:
         //FX ------------------------------------------------------------
         Value fxDist(0, 100.0, 0.0, "DISTORTION", 100);
         paramLists[5].push_back(fxDist);
+
+        Value fxDelayTime(0, 500.0, 120.0, "DELAY TIME", 100);
+        paramLists[5].push_back(fxDelayTime);
+
+        Value fxDelayDryWet(0, 1.0, 0.0, "DEL DRYWET", 100);
+        paramLists[5].push_back(fxDelayDryWet);
+
+        Value fxDelayFeedback(0, 1.0, 0.65, "DEL FEEDBACK", 100);
+        paramLists[5].push_back(fxDelayFeedback);
 
         //LFO -----------------------------------------------------------
         //GLOBAL --------------------------------------------------------
